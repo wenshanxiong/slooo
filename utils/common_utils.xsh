@@ -125,7 +125,7 @@ def cleanup(server_configs, swap):
 
         ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo rm -rf {datadir} ;\
                                        sudo umount -f -l {partition} ;\
-                                       sudo cgdelete cpu:db cpu:cpulow cpu:cpuhigh blkio:db ; true ;\
+                                       sudo cgdelete cpu:db cpu:cpulow cpu:cpuhigh memory:db blkio:db ; true ;\
                                        sudo /sbin/tc qdisc del dev eth0 root ; true ;\
                                        pkill {process}'")
         if swap:
