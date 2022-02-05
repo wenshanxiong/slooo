@@ -123,10 +123,11 @@ def cleanup(server_configs, swap):
         swapfile = server_config["swapfile"]
         process = server_config["process"]
 
+        if swap:
+            ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo swapoff -v {swapfile}'")
+
         ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo rm -rf {datadir} ;\
                                        sudo umount -f -l {partition} ;\
                                        sudo cgdelete cpu:db cpu:cpulow cpu:cpuhigh memory:db blkio:db ; true ;\
                                        sudo /sbin/tc qdisc del dev eth0 root ; true ;\
                                        pkill {process}'")
-        if swap:
-            ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo swapoff -v {swapfile}'")
