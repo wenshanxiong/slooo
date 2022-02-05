@@ -12,7 +12,7 @@ class Quorum:
         self.runtime = opt.runtime
         self.exp = kwargs.get("exp")
         self.exp_type = opt.exp_type
-        self.swap = True if self.exp == "6" else False
+        self.swap = True if self.exp == "5" else False
         self.trial = kwargs.get("trial")
         self.output_path=opt.output_path
         self.primaryip = None
