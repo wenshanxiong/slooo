@@ -95,12 +95,12 @@ class MongoDB(Quorum):
 
     # benchmark_load is used to run the ycsb load and wait until it completes.
     def benchmark_load(self):
-        @(self.client_configs["ycsb"]) load mongodb -s -P @(self.workload) -threads @(self.threads) -p mongodb.url=@(f"mongodb://{self.primaryhost}/ycsb?w=majority&readConcernLevel=majority")
+        taskset -ac {self.client_configs['cpus']} @(self.client_configs["ycsb"]) load mongodb -s -P @(self.workload) -threads @(self.threads) -p mongodb.url=@(f"mongodb://{self.primaryhost}/ycsb?w=majority&readConcernLevel=majority")
 
 
     # ycsb run exectues the given workload and waits for it to complete
     def benchmark_run(self):
-        @(self.client_configs["ycsb"]) run mongodb -s -P @(self.workload) -threads @(self.threads)  -p maxexecutiontime=@(self.runtime) -p mongodb.url=@(f"mongodb://{self.primaryhost}/ycsb?w=majority&readConcernLevel=majority") > @(self.results_txt)
+        taskset -ac {self.client_configs['cpus']} @(self.client_configs["ycsb"]) run mongodb -s -P @(self.workload) -threads @(self.threads)  -p maxexecutiontime=@(self.runtime) -p mongodb.url=@(f"mongodb://{self.primaryhost}/ycsb?w=majority&readConcernLevel=majority") > @(self.results_txt)
 
 
     # cleanup is called at the end of the given trial of an experiment

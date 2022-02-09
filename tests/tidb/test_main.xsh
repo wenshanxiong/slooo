@@ -72,11 +72,11 @@ class TiDB(Quorum):
 
     # benchmark_load is used to run the ycsb load and wait until it completes.
     def benchmark_load(self):
-        @(self.client_configs["ycsb"]) load tikv -P @(self.workload) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads)
+        taskset -ac {self.client_configs['cpus']} @(self.client_configs["ycsb"]) load tikv -P @(self.workload) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads)
 
     # ycsb run exectues the given workload and waits for it to complete
     def benchmark_run(self):
-        @(self.client_configs["ycsb"]) run tikv -P @(self.workload) -p maxexecutiontime=@(self.runtime) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads) > @(self.results_txt)
+        taskset -ac {self.client_configs['cpus']} @(self.client_configs["ycsb"]) run tikv -P @(self.workload) -p maxexecutiontime=@(self.runtime) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads) > @(self.results_txt)
 
     
     def tidb_cleanup(self):

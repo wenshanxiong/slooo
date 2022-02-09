@@ -60,6 +60,7 @@
     "name": "mongodb-client",
     "mongod":"/home/modb/mongodb/bin/mongod",
     "mongo":"/home/modb/mongodb/bin/mongo",
-    "ycsb":"/home/modb/ycsb-0.17.0/bin/ycsb"
+    "ycsb":"/home/modb/ycsb-0.17.0/bin/ycsb",
+    "cpus": "1-8"
 }
 }

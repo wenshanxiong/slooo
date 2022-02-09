@@ -44,7 +44,8 @@
 ],
 "client": {
     "name": "rethinkdbssd-client",
-    "ycsb": "./YCSB/bin/ycsb"
+    "ycsb": "./YCSB/bin/ycsb",
+    "cpus": "4,5,6"
 }
 }
   
