@@ -25,7 +25,6 @@ class Quorum:
         if self.ondisk == "disk":
             init_disk(self.server_configs, self.exp)
         elif self.ondisk == "mem":
-            init_memory()
             init_memory(self.server_configs)
         set_swap_config(self.server_configs, self.swap)
 
