@@ -147,10 +147,10 @@ class RethinkDB(Quorum):
         self.db_init()
         self.benchmark_load()
 
+        sleep 10
+
         self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
         self.fault_process.start()
-
-        sleep 10
 
         self.benchmark_run()
 

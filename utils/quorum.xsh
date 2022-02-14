@@ -15,7 +15,7 @@ class Quorum:
         self.swap = False  #change this if using memory instead of disk
         self.trial = kwargs.get("trial")
         self.output_path=opt.output_path
-        self.fault_snooze=int(opt.fault_snooze) + 10
+        self.fault_snooze=int(opt.fault_snooze)
         self.primaryip = None
         self.primaryhost = None
         self.fault_server_config = None
@@ -56,6 +56,8 @@ class Quorum:
         self.db_init()
 
         self.benchmark_load()
+        
+        sleep 10
 
         fault_inject(self.exp, self.fault_server_config, self.fault_pids)
 
