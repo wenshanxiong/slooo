@@ -4,6 +4,7 @@ import sys
 import json
 import yaml
 import logging
+from multiprocessing import Process
 
 from utils.quorum import Quorum
 from utils.common_utils import *
@@ -19,8 +20,6 @@ class TiDB(Quorum):
         self.setup_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "setup.yaml")
         self.setup_updt_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "setup_updt.yaml")
 
-    # def tidb_data_cleanup(self):
-    #     data_cleanup(self.server_configs, "/data1")
 
     def config_yaml(self):
         data = None
@@ -96,9 +95,14 @@ class TiDB(Quorum):
         
         self.benchmark_load()
 
-        fault_inject(self.exp, self.fault_server_config, self.fault_pids)
+        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
+        self.fault_process.start()
+
+        sleep 10
 
         self.benchmark_run()
+
+        self.fault_process.join()
 
         self.tidb_cleanup()
         self.server_cleanup()

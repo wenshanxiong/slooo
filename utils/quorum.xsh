@@ -15,13 +15,18 @@ class Quorum:
         self.swap = False  #change this if using memory instead of disk
         self.trial = kwargs.get("trial")
         self.output_path=opt.output_path
+        self.fault_snooze=int(opt.fault_snooze) + 10
         self.primaryip = None
         self.primaryhost = None
         self.fault_server_config = None
         self.fault_pids = None
 
     def server_setup(self):
-        init_disk(self.server_configs, self.exp)
+        if self.ondisk == "disk":
+            init_disk(self.server_configs, self.exp)
+        elif self.ondisk == "mem":
+            init_memory()
+            init_memory(self.server_configs)
         set_swap_config(self.server_configs, self.swap)
 
     def start_db(self):

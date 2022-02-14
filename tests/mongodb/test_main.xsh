@@ -2,6 +2,7 @@
 
 import json
 import logging
+from multiprocessing import Process
 
 from utils.quorum import Quorum
 from utils.common_utils import *
@@ -135,9 +136,14 @@ class MongoDB(Quorum):
 
         self.benchmark_load()
 
-        fault_inject(self.exp, self.fault_server_config, self.fault_pids)
+        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
+        self.fault_process.start()
+
+        sleep 10
 
         self.benchmark_run()
+
+        self.fault_process.join()
 
         self.db_cleanup()
         self.server_cleanup()

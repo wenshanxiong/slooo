@@ -85,15 +85,18 @@ def init_disk(server_configs, exp):
                                         sudo mkdir -p {datadir} ;\
                                         sudo mkfs.{filesys} {partition} -f ;\
                                         sudo mount -t {filesys} {partition} {datadir} ;\
-                                        sudo mount -t xfs {partition} {datadir} -o remount,noatime ;\
+                                        sudo mount -t {filesys} {partition} {datadir} -o remount,noatime ;\
                                         sudo chmod o+w {datadir}'")
 
         if exp=="4":
             ssh -i ~/.ssh/id_rsa @(ip) @(f"sh -c 'taskset -ac 1 dd if=/dev/zero of={datadir}/tmp.txt bs=1000 count=1400000 conv=notrunc'")
 
-def init_memory(server_configs, data_path):
+def init_memory(server_configs):
     for server_config in server_configs:
-        ssh -i ~/.ssh/id_rsa @(server_config["ip"]) @(f"sudo sh -c 'sudo mkdir -p {data_path} ; sudo mount -t tmpfs -o rw,size=8G tmpfs {data_path} ; sudo chmod o+w {data_path}'")
+        ip = server_config["ip"]
+        datadir = server_config["datadir"]
+        ramdisk_size = server_config["ramdisk_size"]
+        ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo mkdir -p {datadir} ; sudo mount -t tmpfs -o rw,size={ramdisk_size} tmpfs {datadir} ; sudo chmod o+w {datadir}'")
 
 # swappiness config
 def set_swap_config(server_configs, swap):
@@ -126,8 +129,8 @@ def cleanup(server_configs, swap):
         if swap:
             ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo swapoff -v {swapfile}'")
 
-        ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo rm -rf {datadir} ;\
-                                       sudo umount -f -l {partition} ;\
-                                       sudo cgdelete cpu:db cpu:cpulow cpu:cpuhigh memory:db blkio:db ; true ;\
+        ssh -i ~/.ssh/id_rsa @(ip) @(f"sudo sh -c 'sudo umount -f {datadir} ;\
+                                       sudo rm -rf {datadir} ;\
+                                       sudo cgdelete cpu:db cpu:cpulow cpu:cpuhigh blkio:db memory:db ; true ;\
                                        sudo /sbin/tc qdisc del dev eth0 root ; true ;\
                                        pkill {process}'")

@@ -5,6 +5,7 @@ import sys
 import json
 import logging
 from rethinkdb import r
+from multiprocessing import Process
 
 from utils.quorum import Quorum
 from utils.common_utils import *
@@ -146,11 +147,14 @@ class RethinkDB(Quorum):
         self.db_init()
         self.benchmark_load()
 
-        fault_inject(self.exp, self.fault_server_config, self.fault_pids)
+        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
+        self.fault_process.start()
 
-        sleep 30
+        sleep 10
 
         self.benchmark_run()
+
+        self.fault_process.join()
 
         sleep 20
 

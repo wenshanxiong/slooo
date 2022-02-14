@@ -59,7 +59,8 @@ slow_vs_num = {1: cpu_slow,
                5: memory_contention,
                6: network_slow}
 
-def fault_inject(exp, server_config, pids):
+def fault_inject(exp, server_config, pids, snooze):
+    sleep @(snooze)
     ip = server_config["ip"]
     if exp == "kill":
         kill_process(ip, pids)
@@ -67,5 +68,3 @@ def fault_inject(exp, server_config, pids):
         pass
     else:
         slow_vs_num[int(exp)](server_config, ip, pids)
-    
-    sleep 30
