@@ -19,7 +19,7 @@ def parse_opt():
     parser.add_argument("--threads", type=int, default=250, help="no. of logical clients")
     parser.add_argument("--output-path", type=str, default="results", help="results output path")
     parser.add_argument("--cleanup", action='store_true', help="clean's up the servers")
-    parser.add_argument("--fault_snooze", type=int, default=0, help="After how long from the start of sending reqs should the fault be injected")
+    parser.add_argument("--fault-snooze", type=int, default=0, help="After how long from the start of sending reqs should the fault be injected")
     opt = parser.parse_args()
     return opt
 
