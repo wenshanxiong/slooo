@@ -22,6 +22,7 @@ class Quorum:
         self.fault_pids = None
 
     def server_setup(self):
+        print("[server_setup]")
         if self.ondisk == "disk":
             init_disk(self.server_configs, self.exp)
         elif self.ondisk == "mem":
@@ -29,24 +30,31 @@ class Quorum:
         set_swap_config(self.server_configs, self.swap)
 
     def start_db(self):
+        print("[start_db]")
         pass
 
     def db_init(self):
+        print("[db_init]")
         pass
 
     def benchmark_load(self):
+        print("[benchmark_load]")
         pass
 
     def benchmark_run(self):
+        print("[benchmark_run]")
         pass
 
     def db_cleanup(self):
+        print("[db_cleanup]")
         pass
 
     def server_cleanup(self):
+        print("[server_cleanup]")
         cleanup(self.server_configs, self.swap)
 
     def run(self):
+        print("[run]")
         start_servers(self.server_configs)
 
         self.server_cleanup()
@@ -68,6 +76,7 @@ class Quorum:
         stop_servers(self.server_configs)
 
     def cleanup(self):
+        print("[cleanup]")
         start_servers(self.server_configs)
         self.server_cleanup()
         stop_servers(self.server_configs)
