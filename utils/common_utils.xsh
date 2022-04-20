@@ -134,3 +134,4 @@ def cleanup(server_configs, swap):
                                        sudo cgdelete cpu:db cpu:cpulow cpu:cpuhigh blkio:db memory:db ; true ;\
                                        sudo /sbin/tc qdisc del dev ens192 root ; true ;\
                                        pkill {process}'")
+                                        

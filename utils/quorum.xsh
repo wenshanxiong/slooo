@@ -23,11 +23,11 @@ class Quorum:
 
     def server_setup(self):
         print("[server_setup]")
-        if self.ondisk == "disk":
-            init_disk(self.server_configs, self.exp)
-        elif self.ondisk == "mem":
-            init_memory(self.server_configs)
-        set_swap_config(self.server_configs, self.swap)
+        # if self.ondisk == "disk":
+        #     init_disk(self.server_configs, self.exp)
+        # elif self.ondisk == "mem":
+        #     init_memory(self.server_configs)
+        # set_swap_config(self.server_configs, self.swap)
 
     def start_db(self):
         print("[start_db]")

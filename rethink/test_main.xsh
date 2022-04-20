@@ -24,7 +24,7 @@ class RethinkDB(Quorum):
     def server_setup(self):
         super().server_setup()
         for cfg in self.server_configs:
-            ssh -i ~/.ssh/id_rsa @(cfg["ip"]) @(f"sudo sh -c 'sudo mkdir {cfg['dbpath']}; sudo chmod o+w {cfg['dbpath']}'")
+            ssh -i ~/.ssh/id_rsa @(cfg["ip"]) @(f"sudo sh -c 'sudo mkdir -p {cfg['dbpath']}; sudo chmod o+w {cfg['dbpath']}'")
 
 
     # start_db starts the database instances on each of the server
