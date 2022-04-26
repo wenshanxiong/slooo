@@ -20,12 +20,11 @@ class RethinkDB(Quorum):
         mkdir -p @(results_path)
         self.results_txt = os.path.join(results_path,"{}_{}.txt".format(self.exp,self.trial))
 
-
+    # server_setup prepares the data folder for each rethinkdb server
     def server_setup(self):
         super().server_setup()
         for cfg in self.server_configs:
             ssh -i ~/.ssh/id_rsa @(cfg["ip"]) @(f"sudo sh -c 'sudo mkdir -p {cfg['dbpath']}; sudo chmod o+w {cfg['dbpath']}'")
-
 
     # start_db starts the database instances on each of the server
     def start_db(self):
@@ -42,8 +41,7 @@ class RethinkDB(Quorum):
                 # print('rethinkdb --directory {} --port-offset {} --join {}:{} --bind all --server-name {} --daemon'.format(cfg['dbpath'], cfg['port_offset'], join_ip, cluster_port, cfg['name']))
                 ssh -i ~/.ssh/id_rsa @(cfg["ip"]) @(f"sh -c 'taskset -ac {cfg['cpu']} rethinkdb --directory {cfg['dbpath']} --port-offset {cfg['port_offset']} --join {join_ip}:{cluster_port} --bind all --server-name {cfg['name']} --daemon'")
 
-
-    # db_init initialises the database
+    # db_init initialises the database and table
     def db_init(self):
         super().db_init()
         print("connecting to server ", self.pyserver)
@@ -109,32 +107,27 @@ class RethinkDB(Quorum):
             if cfg["name"] == connect:
                 self.pyserver_port = 28015 + int(cfg["port_offset"])
 
+    # db_cleanup cleans up the database and table
+    def db_cleanup(self):
+        super().db_cleanup()
+        print("connecting to server ", self.pyserver)
+        conn = r.connect(self.pyserver, self.pyserver_port)
+        # Connection established
+        try:
+            r.db('workload').table_drop('usertable').run(conn)
+        except Exception as e:
+            print("Could not delete table")
+        try:
+            r.db_drop('workload').run(conn)
+        except Exception as e:
+            print("Could not delete db")
 
-    # benchmark_load is used to run the ycsb load and wait until it completes.
-    def benchmark_load(self):
-        super().benchmark_load()
-        taskset -ac @(self.client_configs['cpus']) @(self.client_configs["ycsb"]) load rethinkdb -s -P @(self.workload) -p rethinkdb.host=@(self.pyserver) -p rethinkdb.port=@(self.pyserver_port) -threads @(self.threads)
+        print("DB and table deleted")
 
     # ycsb run exectues the given workload and waits for it to complete
     def benchmark_run(self):
         super().benchmark_run()
         taskset -ac @(self.client_configs['cpus']) @(self.client_configs["ycsb"]) run rethinkdb -s -P @(self.workload) -p maxexecutiontime=@(self.runtime) -p rethinkdb.host=@(self.pyserver) -p rethinkdb.port=@(self.pyserver_port) -threads @(self.threads) > @(self.results_txt)
-
-    def db_cleanup(self):
-        super().db_cleanup()
-        print("connecting to server ", self.pyserver)
-        r.connect(self.pyserver, self.pyserver_port).repl()
-        # Connection established
-        try:
-            r.db('ycsb').table_drop('usertable').run()
-        except Exception as e:
-            print("Could not delete table")
-        try:
-            r.db_drop('ycsb').run()
-        except Exception as e:
-            print("Could not delete db")
-        print("DB and table deleted")
-
 
     # test_run is the main driver function
     def run(self):
@@ -146,7 +139,6 @@ class RethinkDB(Quorum):
         sleep 20
 
         self.db_init()
-        # self.benchmark_load()
 
         sleep 10
 
