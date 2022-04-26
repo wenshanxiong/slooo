@@ -34,10 +34,12 @@ class RethinkDB(Quorum):
         join_ip = None
         for idx, cfg in enumerate(self.server_configs):
             if idx==0:
+                # print('rethinkdb --directory {} --port-offset {} --bind all --server-name {} --daemon'.format(cfg['dbpath'], cfg['port_offset'], cfg['name']))
                 ssh -i ~/.ssh/id_rsa @(cfg["ip"]) @(f"sh -c 'taskset -ac {cfg['cpu']} rethinkdb --directory {cfg['dbpath']} --port-offset {cfg['port_offset']} --bind all --server-name {cfg['name']} --daemon'")
                 join_ip = cfg["ip"]
                 cluster_port = 29015 + int(cfg["port_offset"])
             else:
+                # print('rethinkdb --directory {} --port-offset {} --join {}:{} --bind all --server-name {} --daemon'.format(cfg['dbpath'], cfg['port_offset'], join_ip, cluster_port, cfg['name']))
                 ssh -i ~/.ssh/id_rsa @(cfg["ip"]) @(f"sh -c 'taskset -ac {cfg['cpu']} rethinkdb --directory {cfg['dbpath']} --port-offset {cfg['port_offset']} --join {join_ip}:{cluster_port} --bind all --server-name {cfg['name']} --daemon'")
 
 
@@ -45,72 +47,64 @@ class RethinkDB(Quorum):
     def db_init(self):
         super().db_init()
         print("connecting to server ", self.pyserver)
-        print(self.pyserver, self.pyserver_port)
-        r.connect(self.pyserver, self.pyserver_port).repl()
+        conn = r.connect(self.pyserver, self.pyserver_port)
+
         # Connection established
         try:
-            r.db('ycsb').table_drop('usertable').run()
+            r.db('workload').table_drop('usertable').run(conn)
         except Exception as e:
             print("Could not delete table")
         try:
-            r.db_drop('ycsb').run()
+            r.db_drop('workload').run(conn)
         except Exception as e:
             print("Could not delete db")
 
         try:
-            r.db_create('ycsb').run()
-            r.db('ycsb').table_create('usertable', replicas=len(self.server_configs),primary_key='__pk__').run()
+            r.db_create('workload').run(conn)
+            r.db('workload').table_create('usertable', replicas=len(self.server_configs), primary_key='__pk__').run(conn)
         except Exception as e:
             print("Could not create table")
 
-        sleep 5
+        # Print table status
+        table_status = list(r.db('rethinkdb').table('table_status').run(conn))
+        print(json.dumps(table_status, indent=2, sort_keys=True))
 
-        # Print the primary name
-        b = list(r.db('rethinkdb').table('table_status').run())
-        primaryreplica = b[0]['shards'][0]['primary_replicas'][0]
-        print("primaryreplica=", primaryreplica, sep='')
-
-        replicas = b[0]['shards'][0]['replicas']
-        secondaryreplica = ""
-        for rep in replicas:
-            if rep['server'] != primaryreplica:
-                secondaryreplica = rep['server']
+        # get leader's (pid, ip) and follower's (pid, ip)
+        leader = table_status[0]['raft_leader']
+        for replica in table_status[0]['shards'][0]['replicas']:
+            if replica['server'] != leader:
+                follower = replica['server']
                 break
-        print(replicas)
-        print("secondaryreplica=", secondaryreplica, sep='')
 
+        res = list(r.db('rethinkdb').table('server_status').run(conn))
+        name_PID_IP = {}
+        for n in res:
+            name_PID_IP[n['name']] = n['process']['pid'],n['network']['canonical_addresses'][0]['host']
 
-        res = list(r.db('rethinkdb').table('server_status').run())
-        namePidIpRes = [(n['name'],n['process']['pid'],n['network']['canonical_addresses'][0]['host']) for n in res]
-        
+        leader_pid, leader_ip = name_PID_IP[leader]
+        follower_pid, follower_ip = name_PID_IP[follower]
+        print(leader, leader_ip, leader_pid)
+        print(follower, follower_ip, follower_pid)
 
-        for p in namePidIpRes:
-            if p[0] == primaryreplica:
-                primarypid = p[1]
-                primaryip = p[2]
-            if p[0] == secondaryreplica:
-                secondarypid = p[1]
-                secondaryip = p[2]
-    
-        self.primaryip = primaryip
+        self.primaryip = leader_ip
 
         if self.exp_type == "follower":
-            fault_replica=secondaryreplica
-            self.fault_pids=str(secondarypid)
-            connect=primaryreplica
-            self.pyserver = primaryip
+            fault_replica=follower
+            self.fault_pids=str(follower_pid)
+            connect=leader
+            self.pyserver = leader_ip
         elif self.exp_type == "leader":
-            fault_replica=primaryreplica
-            self.fault_pids=str(primarypid)
-            connect=secondaryreplica
-            self.pyserver = secondaryip
+            fault_replica=leader
+            self.fault_pids=str(leader_pid)
+            connect=follower
+            self.pyserver = follower_ip
 
         for cfg in self.server_configs:
             if cfg["name"] == fault_replica:
                 self.fault_server_config = cfg
 
         for cfg in self.server_configs:
-            if cfg["name"] == primaryreplica:
+            if cfg["name"] == leader:
                 self.primaryport = 28015 + int(cfg["port_offset"])
             if cfg["name"] == connect:
                 self.pyserver_port = 28015 + int(cfg["port_offset"])
