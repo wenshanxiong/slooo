@@ -29,6 +29,7 @@ class RethinkDB(Quorum):
 
     # start_db starts the database instances on each of the server
     def start_db(self):
+        super().start_db()
         cluster_port = None
         join_ip = None
         for idx, cfg in enumerate(self.server_configs):
@@ -42,7 +43,9 @@ class RethinkDB(Quorum):
 
     # db_init initialises the database
     def db_init(self):
+        super().db_init()
         print("connecting to server ", self.pyserver)
+        print(self.pyserver, self.pyserver_port)
         r.connect(self.pyserver, self.pyserver_port).repl()
         # Connection established
         try:
@@ -73,6 +76,7 @@ class RethinkDB(Quorum):
             if rep['server'] != primaryreplica:
                 secondaryreplica = rep['server']
                 break
+        print(replicas)
         print("secondaryreplica=", secondaryreplica, sep='')
 
 
@@ -114,13 +118,16 @@ class RethinkDB(Quorum):
 
     # benchmark_load is used to run the ycsb load and wait until it completes.
     def benchmark_load(self):
+        super().benchmark_load()
         taskset -ac @(self.client_configs['cpus']) @(self.client_configs["ycsb"]) load rethinkdb -s -P @(self.workload) -p rethinkdb.host=@(self.pyserver) -p rethinkdb.port=@(self.pyserver_port) -threads @(self.threads)
 
     # ycsb run exectues the given workload and waits for it to complete
     def benchmark_run(self):
+        super().benchmark_run()
         taskset -ac @(self.client_configs['cpus']) @(self.client_configs["ycsb"]) run rethinkdb -s -P @(self.workload) -p maxexecutiontime=@(self.runtime) -p rethinkdb.host=@(self.pyserver) -p rethinkdb.port=@(self.pyserver_port) -threads @(self.threads) > @(self.results_txt)
 
     def db_cleanup(self):
+        super().db_cleanup()
         print("connecting to server ", self.pyserver)
         r.connect(self.pyserver, self.pyserver_port).repl()
         # Connection established
@@ -145,14 +152,14 @@ class RethinkDB(Quorum):
         sleep 20
 
         self.db_init()
-        self.benchmark_load()
+        # self.benchmark_load()
 
         sleep 10
 
         self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
         self.fault_process.start()
 
-        self.benchmark_run()
+        # self.benchmark_run()
 
         self.fault_process.join()
 

@@ -21,8 +21,11 @@ class Quorum:
         self.fault_server_config = None
         self.fault_pids = None
 
+    def color_print(self, s):
+        print('\033[92m' + s + '\033[0m')
+
     def server_setup(self):
-        print("[server_setup]")
+        self.color_print("[server_setup]")
         # if self.ondisk == "disk":
         #     init_disk(self.server_configs, self.exp)
         # elif self.ondisk == "mem":
@@ -30,31 +33,31 @@ class Quorum:
         # set_swap_config(self.server_configs, self.swap)
 
     def start_db(self):
-        print("[start_db]")
+        self.color_print("[start_db]")
         pass
 
     def db_init(self):
-        print("[db_init]")
+        self.color_print("[db_init]")
         pass
 
     def benchmark_load(self):
-        print("[benchmark_load]")
+        self.color_print("[benchmark_load]")
         pass
 
     def benchmark_run(self):
-        print("[benchmark_run]")
+        self.color_print("[benchmark_run]")
         pass
 
     def db_cleanup(self):
-        print("[db_cleanup]")
+        self.color_print("[db_cleanup]")
         pass
 
     def server_cleanup(self):
-        print("[server_cleanup]")
+        self.color_print("[server_cleanup]")
         cleanup(self.server_configs, self.swap)
 
     def run(self):
-        print("[run]")
+        self.color_print("[run]")
         start_servers(self.server_configs)
 
         self.server_cleanup()
@@ -76,7 +79,7 @@ class Quorum:
         stop_servers(self.server_configs)
 
     def cleanup(self):
-        print("[cleanup]")
+        self.color_print("[cleanup]")
         start_servers(self.server_configs)
         self.server_cleanup()
         stop_servers(self.server_configs)
