@@ -1,3 +1,5 @@
+import sys
+from tracemalloc import start
 from rethinkdb import r
 from statistics import mean, median
 import json
@@ -67,28 +69,32 @@ def execute_write_read_queries():
     global median_latency, throughput
     conn = r.connect(pyserver, pyserver_port)
 
-    # transaction queries
-    write_query = r.db('workload').table("usertable").insert({"future": "Alicloud no.1"})
-    read_query = r.db('workload').table("usertable").get(1)
+    def exec_transaction(opts):
+        write_query = r.db('workload').table("usertable").insert({"future": "{}".format("Alicloud no.1" * opts * 10000)})
+        read_query = r.db('workload').table("usertable").get(1)
+        write_query.run(conn)
+        read_query.run(conn)
 
-    def exec_transaction(opts_cnt):
-        for _ in range(opts_cnt):
-            write_query.run(conn)
-            read_query.run(conn)
-
-    for opts_cnt in range(50):
+    for opts in range(1, 61):
         latency = []
 
-        start_time = time.time()
-        exec_transaction(opts_cnt)
-        latency.append(time.time() - start_time)
+        for _ in range(1, 11):
+            start_time = time.process_time()
+
+            exec_transaction(opts)
+
+            latency.append(time.process_time() - start_time)
 
         # records stats
-        median_latency.append(median(latency) * 1000)
-        throughput.append(opts_cnt / (latency[-1]))
+        median_latency.append(mean(latency)* 1000)
+        throughput.append(10 * opts)
+        opts += 1
 
-        print("throughput: {} median_latency: {}".format(str(throughput[-1]), str(median_latency[-1])))
+        print("{{throughput: {}, median_latency: {}}}".format(str(throughput[-1]), str(median_latency[-1])))
 
+
+def db_cleanup():
+    conn = r.connect(pyserver, pyserver_port)
     r.db('workload').table('usertable').delete().run(conn)
 
 
@@ -100,6 +106,12 @@ def plot_result():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python3 workload.py [ip addr] [port]")
+    
+    pyserver = sys.argv[1]
+    pyserver_port = sys.argv[2]
+
     # start_server()
     # time.sleep(5)
 
@@ -107,6 +119,6 @@ if __name__ == "__main__":
 
     execute_write_read_queries()
 
-    plot_result()
+    # plot_result()
 
-    pass
+    # db_cleanup()

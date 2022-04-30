@@ -127,7 +127,8 @@ class RethinkDB(Quorum):
     # ycsb run exectues the given workload and waits for it to complete
     def benchmark_run(self):
         super().benchmark_run()
-        taskset -ac @(self.client_configs['cpus']) @(self.client_configs["ycsb"]) run rethinkdb -s -P @(self.workload) -p maxexecutiontime=@(self.runtime) -p rethinkdb.host=@(self.pyserver) -p rethinkdb.port=@(self.pyserver_port) -threads @(self.threads) > @(self.results_txt)
+        print("Running the workload...")
+        taskset -ac @(self.client_configs['cpus']) python3 @(self.client_configs['workload']) @(self.pyserver) @(self.pyserver_port) > @(self.results_txt)
 
     # test_run is the main driver function
     def run(self):
@@ -145,7 +146,7 @@ class RethinkDB(Quorum):
         self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
         self.fault_process.start()
 
-        # self.benchmark_run()
+        self.benchmark_run()
 
         self.fault_process.join()
 
