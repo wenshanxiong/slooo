@@ -97,14 +97,6 @@ def db_cleanup():
     conn = r.connect(pyserver, pyserver_port)
     r.db('workload').table('usertable').delete().run(conn)
 
-
-def plot_result():
-    plt.plot(throughput, median_latency, 'bo')
-    plt.xlabel('Throughput (Tx/sec)')
-    plt.ylabel('Median Latency (ms)')
-    plt.savefig('benchmark.png')
-
-
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python3 workload.py [ip addr] [port]")
@@ -118,7 +110,5 @@ if __name__ == "__main__":
     # db_init()
 
     execute_write_read_queries()
-
-    # plot_result()
 
     # db_cleanup()

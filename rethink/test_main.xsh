@@ -107,6 +107,8 @@ class RethinkDB(Quorum):
             if cfg["name"] == connect:
                 self.pyserver_port = 28015 + int(cfg["port_offset"])
 
+        
+
     # db_cleanup cleans up the database and table
     def db_cleanup(self):
         super().db_cleanup()
@@ -128,6 +130,7 @@ class RethinkDB(Quorum):
     def benchmark_run(self):
         super().benchmark_run()
         print("Running the workload...")
+        print(self.pyserver, self.pyserver_port)
         taskset -ac @(self.client_configs['cpus']) python3 @(self.client_configs['workload']) @(self.pyserver) @(self.pyserver_port) > @(self.results_txt)
 
     # test_run is the main driver function
@@ -145,6 +148,8 @@ class RethinkDB(Quorum):
 
         self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
         self.fault_process.start()
+
+        sleep 10
 
         self.benchmark_run()
 
