@@ -32,7 +32,10 @@ def parse_file(filename):
 def plot_result(stat_dict):
     for k in stat_dict:
         T, L = stat_dict[k]
-        plt.plot(T[0], L[0], label=prefix[k.split('_')[0]])
+        if type == "level":
+            plt.plot(T[0], L[0], label=k)
+        else:
+            plt.plot(T[0], L[0], label=prefix[k.split('_')[0]])
     plt.legend()
     plt.title("Follower Fail-Injection comparisons")
     plt.xlabel('Throughput (Tx/sec)')

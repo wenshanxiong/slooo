@@ -1,8 +1,7 @@
 #!/usr/bin/env xonsh
 
 
-def cpu_slow(slow_server_config, slow_ip, slow_pids):
-    quota=50000
+def cpu_slow(slow_server_config, slow_ip, slow_pids, quota=150000):
     period=1000000
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo mkdir /sys/fs/cgroup/cpu/db'"
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cpu.cfs_quota_us'".format(quota))
@@ -38,12 +37,12 @@ def disk_contention(slow_server_config, slow_ip, slow_pids):
 def network_slow(slow_server_config, slow_ip, slow_pids):
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo /sbin/tc qdisc add dev eth0 root netem delay 400ms'"
 
-def memory_contention(slow_server_config, slow_ip, slow_pids):
+def memory_contention(slow_server_config, slow_ip, slow_pids, level=2000):
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo mkdir /sys/fs/cgroup/memory/db'"
     #ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 1 > /sys/fs/cgroup/memory/db/memory.memsw.oom_control'"  # disable OOM killer
     #ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 10485760 > /sys/fs/cgroup/memory/db/memory.memsw.limit_in_bytes'"   # 10MB
     # ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 1 > /sys/fs/cgroup/memory/db/memory.oom_control'"  # disable OOM killer
-    ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo echo @(5 * 1024 * 1024) > /sys/fs/cgroup/memory/db/memory.limit_in_bytes'"   # 5MB
+    ssh -i ~/.ssh/id_rsa @(slow_ip) @(f"sudo sh -c 'sudo echo {level * 1024 * 1024} > /sys/fs/cgroup/memory/db/memory.limit_in_bytes'")   # 5MB
     
     for slow_pid in slow_pids.split():
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/memory/db/cgroup.procs'".format(slow_pid))
