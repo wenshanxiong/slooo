@@ -1,8 +1,15 @@
 #!/usr/bin/env xonsh
 
 
-def cpu_slow(slow_server_config, slow_ip, slow_pids, quota=150000):
-    period=1000000
+def cpu_slow(slow_server_config, slow_ip, slow_pids):
+    if 'cpu_quota' in slow_server_config:
+        quota = slow_server_config['cpu_quota']
+    else:
+        quota=50000
+    if 'cpu_period' in slow_server_config:
+        period = slow_server_config['cpu_period']
+    else:
+        period=1000000
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo mkdir /sys/fs/cgroup/cpu/db'"
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cpu.cfs_quota_us'".format(quota))
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cpu.cfs_period_us'".format(period))
@@ -35,14 +42,22 @@ def disk_contention(slow_server_config, slow_ip, slow_pids):
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sh -c 'nohup taskset -ac 2 ./clear_dd_file.sh > /dev/null 2>&1 &'"
 
 def network_slow(slow_server_config, slow_ip, slow_pids):
-    ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo /sbin/tc qdisc add dev eth0 root netem delay 400ms'"
+    if 'delay' in slow_server_config:
+        delay = slow_server_config['delay']
+    else:
+        delay = '400ms'
+    ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo /sbin/tc qdisc add dev eth0 root netem delay {}'".format(delay)
 
-def memory_contention(slow_server_config, slow_ip, slow_pids, level=1000):
+def memory_contention(slow_server_config, slow_ip, slow_pids):
+    if 'mem_quota' in slow_server_config:
+        mem_quota = slow_server_config['mem_quota']
+    else:
+        mem_quota = 5 * 1024 * 1024 #5MB
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo mkdir /sys/fs/cgroup/memory/db'"
     #ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 1 > /sys/fs/cgroup/memory/db/memory.memsw.oom_control'"  # disable OOM killer
     #ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 10485760 > /sys/fs/cgroup/memory/db/memory.memsw.limit_in_bytes'"   # 10MB
     # ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 1 > /sys/fs/cgroup/memory/db/memory.oom_control'"  # disable OOM killer
-    ssh -i ~/.ssh/id_rsa @(slow_ip) @(f"sudo sh -c 'sudo echo {level * 1024 * 1024} > /sys/fs/cgroup/memory/db/memory.limit_in_bytes'")   # 5MB
+    ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo echo @({}) > /sys/fs/cgroup/memory/db/memory.limit_in_bytes'".format(mem_quota)   # 5MB
     
     for slow_pid in slow_pids.split():
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/memory/db/cgroup.procs'".format(slow_pid))
