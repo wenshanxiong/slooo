@@ -3,6 +3,8 @@ import argparse
 
 from rethink.test_main import RethinkDB
 
+#TODO:pointbreak
+
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument("--system", type=str, default="rethinkdb", help="mongodb/rethinkdb/tidb/copilot")
