@@ -20,6 +20,7 @@ class Quorum:
         self.primaryhost = None
         self.fault_server_config = None
         self.fault_pids = None
+        self.fault_level = kwargs.get("fault_level")
 
     def color_print(self, s):
         print('\033[92m' + s + '\033[0m')
@@ -70,7 +71,7 @@ class Quorum:
         
         sleep 10
 
-        fault_inject(self.exp, self.fault_server_config, self.fault_pids)
+        fault_inject(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, self.fault_level)
 
         self.benchmark_run()
 

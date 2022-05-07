@@ -1,0 +1,13 @@
+{
+    "fault_level": {
+        "cpu_quota": 50000,
+        "cpu_period": 1000000
+    },
+    "pointbreak": {
+        "activate": false,
+        "target": "cpu_quota",
+        "start_value": 1000000,
+        "end_value": 0,
+        "step_size": 10000
+    }
+}
