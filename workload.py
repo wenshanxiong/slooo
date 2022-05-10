@@ -75,20 +75,19 @@ def execute_write_read_queries():
         write_query.run(conn)
         read_query.run(conn)
 
-    for opts in range(1, 61):
+    for opts in range(10):
         latency = []
 
-        for _ in range(1, 11):
+        for _ in range(10):
             start_time = time.process_time()
 
-            exec_transaction(opts)
+            exec_transaction(100)
 
             latency.append(time.process_time() - start_time)
 
         # records stats
         median_latency.append(mean(latency)* 1000)
-        throughput.append(10 * opts)
-        opts += 1
+        throughput.append(100)
 
         print("{{throughput: {}, median_latency: {}}}".format(str(throughput[-1]), str(median_latency[-1])))
 

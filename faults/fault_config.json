@@ -4,10 +4,10 @@
         "cpu_period": 1000000
     },
     "pointbreak": {
-        "activate": false,
+        "activate": true,
         "target": "cpu_quota",
-        "start_value": 1000000,
-        "end_value": 0,
-        "step_size": 10000
+        "start": 50000,
+        "end": 0,
+        "step": 10000
     }
 }

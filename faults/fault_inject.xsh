@@ -47,7 +47,7 @@ def network_slow(slow_server_config, slow_ip, slow_pids, fault_level):
         delay = fault_level['delay']
     else:
         delay = '400ms'
-    ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo /sbin/tc qdisc add dev eth0 root netem delay {}'".format(delay)
+    ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo /sbin/tc qdisc add dev eth0 root netem delay {}'".format(delay))
 
 def memory_contention(slow_server_config, slow_ip, slow_pids, fault_level):
     if 'mem_quota' in fault_level:
@@ -58,7 +58,7 @@ def memory_contention(slow_server_config, slow_ip, slow_pids, fault_level):
     #ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 1 > /sys/fs/cgroup/memory/db/memory.memsw.oom_control'"  # disable OOM killer
     #ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 10485760 > /sys/fs/cgroup/memory/db/memory.memsw.limit_in_bytes'"   # 10MB
     # ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 1 > /sys/fs/cgroup/memory/db/memory.oom_control'"  # disable OOM killer
-    ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo echo @({}) > /sys/fs/cgroup/memory/db/memory.limit_in_bytes'".format(mem_quota)   # 5MB
+    ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo @({}) > /sys/fs/cgroup/memory/db/memory.limit_in_bytes'".format(mem_quota))   # 5MB
     
     for slow_pid in slow_pids.split():
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/memory/db/cgroup.procs'".format(slow_pid))

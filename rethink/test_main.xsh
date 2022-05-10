@@ -18,7 +18,7 @@ class RethinkDB(Quorum):
         self.pyserver_port = 28015 + int(self.server_configs[len(self.server_configs)-1]["port_offset"])
         results_path = os.path.join(self.output_path, "rethink_{}_{}_{}_{}_results".format(self.exp_type,"swapon" if self.swap else "swapoff", self.ondisk, self.threads))
         mkdir -p @(results_path)
-        self.results_txt = os.path.join(results_path,"{}_{}.txt".format(self.exp,self.trial))
+        self.results_txt = os.path.join(results_path,"{}_{}_{}.txt".format(self.exp,self.trial,self.fault_level))
 
     # server_setup prepares the data folder for each rethinkdb server
     def server_setup(self):
@@ -146,7 +146,7 @@ class RethinkDB(Quorum):
 
         sleep 10
 
-        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
+        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, self.fault_level, ))
         self.fault_process.start()
 
         sleep 10
