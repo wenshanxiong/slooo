@@ -32,32 +32,26 @@ def main(opt):
         exps = [exp.strip() for exp in opt.exps.split(",")]
 
         for exp in exps:
+            # get fault level and pointbreak config
+            fault_cfg = config_parser(opt.fault_configs)
+            pb_cfg = fault_cfg["pointbreak"]
+            fault_level = fault_cfg["fault_level"][exp]
 
-            if exp == "2" or exp == "3" or exp == "4":
-                DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=None)
-                DB.run()
-                sleep 30
-            else:
-                # get fault level and pointbreak config
-                fault_cfg = config_parser(opt.fault_configs)
-                pb_cfg = fault_cfg["pointbreak"]
-                fault_level = fault_cfg["fault_level"][exp]
+            # calculate the fault levels for testing. If point break is not activated, only the user defined level will be tested.
+            target, start, end, step = pb_cfg["target"], pb_cfg["start"], pb_cfg["end"], pb_cfg["step"]
 
-                # calculate the fault levels for testing. If point break is not activated, only the user defined level will be tested.
-                target, start, end, step = pb_cfg["target"], pb_cfg["start"], pb_cfg["end"], pb_cfg["step"]
-
-                if pb_cfg["activate"]:
-                    pointbreak_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
-                    
-                    for checkpoint in pointbreak_checkpoints:
-                        fault_level[target] = checkpoint
-                        DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
-                        DB.run()
-                        sleep 30
-                else:
+            if pb_cfg["activate"]:
+                pointbreak_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
+                
+                for checkpoint in pointbreak_checkpoints:
+                    fault_level[target] = checkpoint
                     DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
                     DB.run()
                     sleep 30
+            else:
+                DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
+                DB.run()
+                sleep 30
 
 
 if __name__ == "__main__":
