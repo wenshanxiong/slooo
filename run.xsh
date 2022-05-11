@@ -4,8 +4,6 @@ import argparse
 from rethink.test_main import RethinkDB
 from utils.common_utils import config_parser
 
-#TODO:pointbreak
-
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument("--system", type=str, default="rethinkdb", help="mongodb/rethinkdb/tidb/copilot")
@@ -32,23 +30,35 @@ def main(opt):
 
     for iter in range(1,opt.iters+1):
         exps = [exp.strip() for exp in opt.exps.split(",")]
+
         for exp in exps:
 
-            # get fault level and pointbreak config
-            fault_config = config_parser(opt.fault_configs)
-            pointbreak_config = fault_config["pointbreak"]
-            fault_level = fault_config["fault_level"]
-
-            # calculate the fault levels for testing. If point break is not activated, only the user defined level will be tested.
-            target, start, end, step = pointbreak_config["target"], pointbreak_config["start"], pointbreak_config["end"], pointbreak_config["step"]
-            pointbreak_checkpoints = [fault_level[target]]
-            if pointbreak_config["activate"]:
-                pointbreak_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
-            for checkpoint in pointbreak_checkpoints:
-                fault_level[target] = checkpoint
-                DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
+            if exp == "2" or exp == "3" or exp == "4":
+                DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=None)
                 DB.run()
                 sleep 30
+            else:
+                # get fault level and pointbreak config
+                fault_cfg = config_parser(opt.fault_configs)
+                pb_cfg = fault_cfg["pointbreak"]
+                fault_level = fault_cfg["fault_level"][exp]
+
+                # calculate the fault levels for testing. If point break is not activated, only the user defined level will be tested.
+                target, start, end, step = pb_cfg["target"], pb_cfg["start"], pb_cfg["end"], pb_cfg["step"]
+
+                if pb_cfg["activate"]:
+                    pointbreak_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
+                    
+                    for checkpoint in pointbreak_checkpoints:
+                        fault_level[target] = checkpoint
+                        DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
+                        DB.run()
+                        sleep 30
+                else:
+                    DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
+                    DB.run()
+                    sleep 30
+
 
 if __name__ == "__main__":
     opt = parse_opt()

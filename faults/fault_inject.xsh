@@ -1,16 +1,11 @@
 #!/usr/bin/env xonsh
 
-#TODO:multilevel
-
 def cpu_slow(slow_server_config, slow_ip, slow_pids, fault_level):
     if 'cpu_quota' in fault_level:
         quota = fault_level['cpu_quota']
     else:
         quota=50000
-    if 'cpu_period' in fault_level:
-        period = fault_level['cpu_period']
-    else:
-        period=1000000
+    period=1000000
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo mkdir /sys/fs/cgroup/cpu/db'"
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cpu.cfs_quota_us'".format(quota))
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cpu.cfs_period_us'".format(period))
@@ -18,7 +13,7 @@ def cpu_slow(slow_server_config, slow_ip, slow_pids, fault_level):
     for slow_pid in slow_pids.split():
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cgroup.procs'".format(slow_pid))
 
-def cpu_contention(slow_server_config, slow_ip, slow_pids, fault_level):
+def cpu_contention(slow_server_config, slow_ip, slow_pids):
     cpu = slow_server_config['cpu']
     scp resources/slowness/deadloop @(slow_ip):~/
     ssh -i ~/.ssh/id_rsa @(slow_ip) f"sh -c 'nohup taskset -ac {cpu} ./deadloop > /dev/null 2>&1 &'"
@@ -30,7 +25,7 @@ def cpu_contention(slow_server_config, slow_ip, slow_pids, fault_level):
     for slow_pid in slow_pids.split():
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/cpulow/cgroup.procs'".format(slow_pid))
 
-def disk_slow(slow_server_config, slow_ip, slow_pids, fault_level):
+def disk_slow(slow_server_config, slow_ip, slow_pids):
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo mkdir /sys/fs/cgroup/blkio/db'"
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'"
     lsblkcmd="8:32 524288"
@@ -39,7 +34,7 @@ def disk_slow(slow_server_config, slow_ip, slow_pids, fault_level):
     for slow_pid in slow_pids.split():
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/blkio/db/cgroup.procs'".format(slow_pid))
 
-def disk_contention(slow_server_config, slow_ip, slow_pids, fault_level):
+def disk_contention(slow_server_config, slow_ip, slow_pids):
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sh -c 'nohup taskset -ac 2 ./clear_dd_file.sh > /dev/null 2>&1 &'"
 
 def network_slow(slow_server_config, slow_ip, slow_pids, fault_level):
@@ -74,12 +69,14 @@ slow_vs_num = {1: cpu_slow,
                5: memory_contention,
                6: network_slow}
 
-def fault_inject(exp, server_config, pids, snooze, fault_level):
+def fault_inject(exp, server_config, pids, snooze, fault_level=None):
     sleep @(snooze)
     ip = server_config["ip"]
     if exp == "kill":
         kill_process(ip, pids)
     elif exp == "noslow":
         pass
+    elif exp == "2" or exp == "3" or exp == "4":
+        slow_vs_num[int(exp)](server_config, ip, pids)
     else:
         slow_vs_num[int(exp)](server_config, ip, pids, fault_level)

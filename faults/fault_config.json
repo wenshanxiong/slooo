@@ -1,10 +1,17 @@
 {
     "fault_level": {
-        "cpu_quota": 50000,
-        "cpu_period": 1000000
+        "1": {
+            "cpu_quota": 50000
+        },
+        "5": {
+            "mem_quota": 5242880
+        },
+        "6": {
+            "delay": "400ms"
+        }
     },
     "pointbreak": {
-        "activate": true,
+        "activate": false,
         "target": "cpu_quota",
         "start": 50000,
         "end": 0,
