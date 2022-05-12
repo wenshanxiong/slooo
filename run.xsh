@@ -1,15 +1,18 @@
 #!/usr/bin/env xonsh
 import argparse
 
-from rethink.test_main import RethinkDB
+from tests.mongodb.test_main import *
+from tests.rethink.test_main import *
+# from tests.tidb.test_main import *
+# from tests.copilot.test_main import *
 from utils.common_utils import config_parser
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument("--system", type=str, default="rethinkdb", help="mongodb/rethinkdb/tidb/copilot")
     parser.add_argument("--iters", type=int, default=1, help="number of iterations")
-    parser.add_argument("--workload", type=str, default="../YCSB/workloads/workloadf", help="workload path")
-    parser.add_argument("--server-configs", type=str, default="./rethink/server_configs_local.json", help="server config path")
+    parser.add_argument("--workload", type=str, default="/home/zsc/YCSB/workloads/workloada", help="workload path")
+    parser.add_argument("--server-configs", type=str, default="./tests/rethink/server_configs_local.json", help="server config path")
     parser.add_argument("--runtime", type=int, default=300, help="runtime")
     parser.add_argument("--exps", type=str, default="noslow", help="experiments to be ran saperated by commas(,)")
     parser.add_argument("--exp-type", type=str, default="follower", help="leader/follower/both")
@@ -24,8 +27,18 @@ def parse_opt():
     return opt
 
 def main(opt):
+    db_constructor = None
+    if opt.system == "mongodb":
+        db_constructor = MongoDB
+    elif opt.system == "rethinkdb":
+        db_constructor = RethinkDB
+    elif opt.system == "tidb":
+        db_constructor = TiDB
+    elif opt.system == "copilot":
+        db_constructor = Copilot
+
     if opt.cleanup:
-        DB = RethinkDB(opt=opt)
+        DB = db_constructor(opt=opt)
         DB.cleanup()
         return
 
@@ -35,7 +48,7 @@ def main(opt):
         for exp in exps:
 
             if exp == "2" or exp == "3" or exp == "4":
-                DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=None)
+                DB = db_constructor(opt=opt,trial=iter,exp=exp, fault_level=None)
                 DB.run()
                 sleep 30
             else:
@@ -52,7 +65,7 @@ def main(opt):
                     pb_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
                     for checkpoint in pb_checkpoints:
                         fault_level[resource] = checkpoint
-                        DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
+                        DB = db_constructor(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
                         is_crash = DB.run()
                         sleep 30
                         if is_crash:
@@ -62,7 +75,7 @@ def main(opt):
                             return
                     print('\033[92m' + "[Point break not found]" + '\033[0m')
                 else:
-                    DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
+                    DB = db_constructor(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
                     DB.run()
                     sleep 30
 

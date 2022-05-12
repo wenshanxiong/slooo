@@ -94,7 +94,7 @@ class Quorum:
                 except OSError:
                     is_crash = True
 
-        ps aux | grep rethinkdb
+        # ps aux | grep rethinkdb
 
         self.db_cleanup()
         sleep 5

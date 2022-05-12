@@ -47,7 +47,7 @@
 ],
 "client": {
     "name": "rethinkdbssd-client",
-    "workload": "workload.py",
+    "workload": "./tests/rethink/workload.py",
     "cpus": "3"
 }
 }
