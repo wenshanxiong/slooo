@@ -113,7 +113,10 @@ class RethinkDB(Quorum):
     def db_cleanup(self):
         super().db_cleanup()
         print("connecting to server ", self.pyserver)
-        conn = r.connect(self.pyserver, self.pyserver_port)
+        try:
+            conn = r.connect(self.pyserver, self.pyserver_port)
+        except Exception as e:
+            print("Could not connect to server")
         # Connection established
         try:
             r.db('workload').table_drop('usertable').run(conn)
@@ -135,30 +138,4 @@ class RethinkDB(Quorum):
 
     # test_run is the main driver function
     def run(self):
-        start_servers(self.server_configs)
-
-        self.server_cleanup()
-        self.server_setup()
-        self.start_db()
-        sleep 20
-
-        self.db_init()
-
-        sleep 10
-
-        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, self.fault_level, ))
-        self.fault_process.start()
-
-        sleep 10
-
-        self.benchmark_run()
-
-        self.fault_process.join()
-
-        sleep 20
-
-        self.db_cleanup()
-        sleep 5
-        self.server_cleanup()
-        sleep 5
-        stop_servers(self.server_configs)
+        super().run()

@@ -1,21 +1,24 @@
+import os
 from utils.common_utils import *
+from multiprocessing import Process
+from faults.fault_inject import fault_inject
 
 class Quorum:
     def __init__(self, **kwargs):
-        opt = kwargs.get("opt")
-        self.ondisk = opt.ondisk
-        self.nodes = config_parser(opt.server_configs)
+        self.opt = kwargs.get("opt")
+        self.ondisk = self.opt.ondisk
+        self.nodes = config_parser(self.opt.server_configs)
         self.server_configs = self.nodes["servers"]
         self.client_configs = self.nodes["client"]
-        self.workload = opt.workload
-        self.threads = opt.threads
-        self.runtime = opt.runtime
+        self.workload = self.opt.workload
+        self.threads = self.opt.threads
+        self.runtime = self.opt.runtime
         self.exp = kwargs.get("exp")
-        self.exp_type = opt.exp_type
+        self.exp_type = self.opt.exp_type
         self.swap = False  #change this if using memory instead of disk
         self.trial = kwargs.get("trial")
-        self.output_path=opt.output_path
-        self.fault_snooze=int(opt.fault_snooze)
+        self.output_path=self.opt.output_path
+        self.fault_snooze=int(self.opt.fault_snooze)
         self.primaryip = None
         self.primaryhost = None
         self.fault_server_config = None
@@ -58,26 +61,49 @@ class Quorum:
         cleanup(self.server_configs, self.swap)
 
     def run(self):
-        self.color_print("[run]")
+        self.color_print("Start running fault injection test......")
+        is_crash = False
+
         start_servers(self.server_configs)
 
         self.server_cleanup()
-
         self.server_setup()
         self.start_db()
+        sleep 10
+
         self.db_init()
+        sleep 10
 
         self.benchmark_load()
         
         sleep 10
 
-        fault_inject(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, self.fault_level)
+        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, self.fault_level, ))
+        self.fault_process.start()
 
         self.benchmark_run()
 
+        self.fault_process.join()
+        sleep 15
+
+        if self.opt.point_break:
+            pids = self.fault_pids.split()
+            for pid in pids:
+                try:
+                    os.kill(int(self.fault_pids), 0)
+                except OSError:
+                    is_crash = True
+
+        ps aux | grep rethinkdb
+
+        self.db_cleanup()
+        sleep 5
+
         self.server_cleanup()
+        sleep 5
 
         stop_servers(self.server_configs)
+        return is_crash
 
     def cleanup(self):
         self.color_print("[cleanup]")

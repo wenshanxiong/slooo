@@ -19,6 +19,7 @@ def parse_opt():
     parser.add_argument("--cleanup", action='store_true', help="clean's up the servers")
     parser.add_argument("--fault-snooze", type=int, default=0, help="After how long from the start of sending reqs should the fault be injected")
     parser.add_argument("--fault-configs", type=str, default="./faults/fault_config.json", help="fault injection config path")
+    parser.add_argument("-p", "--point-break", action="store_true", help="Enabling point break detection")
     opt = parser.parse_args()
     return opt
 
@@ -42,18 +43,24 @@ def main(opt):
                 fault_cfg = config_parser(opt.fault_configs)
                 pb_cfg = fault_cfg["pointbreak"]
                 fault_level = fault_cfg["fault_level"][exp]
+                resource = list(fault_level.keys())[0]
 
                 # calculate the fault levels for testing. If point break is not activated, only the user defined level will be tested.
-                target, start, end, step = pb_cfg["target"], pb_cfg["start"], pb_cfg["end"], pb_cfg["step"]
+                start, end, step = pb_cfg[resource]["start"], pb_cfg[resource]["end"], pb_cfg[resource]["step"]
 
-                if pb_cfg["activate"]:
-                    pointbreak_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
-                    
-                    for checkpoint in pointbreak_checkpoints:
-                        fault_level[target] = checkpoint
+                if opt.point_break:
+                    pb_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
+                    for checkpoint in pb_checkpoints:
+                        fault_level[resource] = checkpoint
                         DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
-                        DB.run()
+                        is_crash = DB.run()
                         sleep 30
+                        if is_crash:
+                            print('\033[91m' + "[Point break detected!! Multi-level fault injection stops]" + '\033[91m')
+                            print("current fault level:")
+                            print(fault_level)
+                            return
+                    print('\033[92m' + "[Point break not found]" + '\033[0m')
                 else:
                     DB = RethinkDB(opt=opt,trial=iter,exp=exp, fault_level=fault_level)
                     DB.run()

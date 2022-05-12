@@ -7,14 +7,24 @@
             "mem_quota": 5242880
         },
         "6": {
-            "delay": "400ms"
+            "delay": 400
         }
     },
     "pointbreak": {
-        "activate": false,
-        "target": "cpu_quota",
-        "start": 50000,
-        "end": 0,
-        "step": 10000
+        "cpu_quota": { 
+            "start": 10000,
+            "end": 0,
+            "step": 2500
+        }, 
+        "mem_quota": {
+            "start": 5242880,
+            "end": 0,
+            "step": 1048576
+        }, 
+        "delay": {
+            "start": 400,
+            "end": 0,
+            "step": 100
+        }
     }
 }
