@@ -96,9 +96,8 @@ class Quorum:
                 try:
                     os.kill(pid, 0)
                 except Exception:
+                    print(111)
                     is_crash = True
-
-        ps aux | grep rethinkdb
 
         self.db_cleanup()
         sleep 5
@@ -110,6 +109,7 @@ class Quorum:
             stop_servers(self.server_configs + [self.pd_configs])
         else:
             stop_servers(self.server_configs)
+
         return is_crash
 
 

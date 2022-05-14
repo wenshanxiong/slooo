@@ -139,4 +139,4 @@ class RethinkDB(Quorum):
 
     # test_run is the main driver function
     def run(self):
-        super().run()
+        return super().run()
