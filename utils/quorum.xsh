@@ -9,6 +9,7 @@ class Quorum:
         self.ondisk = self.opt.ondisk
         self.nodes = config_parser(self.opt.server_configs)
         self.server_configs = self.nodes["servers"]
+        self.server_pids = [] # collect pids to check process status
         self.client_configs = self.nodes["client"]
         self.workload = self.opt.workload
         self.threads = self.opt.threads
@@ -64,7 +65,10 @@ class Quorum:
         self.color_print("Start running fault injection test......")
         is_crash = False
 
-        start_servers(self.server_configs)
+        if hasattr(self, "pd_configs"):
+            start_servers(self.server_configs + [self.pd_configs])
+        else:
+            start_servers(self.server_configs)
 
         self.server_cleanup()
         self.server_setup()
@@ -87,14 +91,14 @@ class Quorum:
         sleep 15
 
         if self.opt.point_break:
-            pids = self.fault_pids.split()
-            for pid in pids:
+            for pid in self.server_pids:
+                if isinstance(pid, str): pid = int(pid)
                 try:
-                    os.kill(int(self.fault_pids), 0)
-                except OSError:
+                    os.kill(pid, 0)
+                except Exception:
                     is_crash = True
 
-        # ps aux | grep rethinkdb
+        ps aux | grep rethinkdb
 
         self.db_cleanup()
         sleep 5
@@ -102,8 +106,12 @@ class Quorum:
         self.server_cleanup()
         sleep 5
 
-        stop_servers(self.server_configs)
+        if hasattr(self, "pd_configs"):
+            stop_servers(self.server_configs + [self.pd_configs])
+        else:
+            stop_servers(self.server_configs)
         return is_crash
+
 
     def cleanup(self):
         self.color_print("[cleanup]")

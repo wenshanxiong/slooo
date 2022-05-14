@@ -58,7 +58,7 @@
     "name": "mongodb-client",
     "mongod":"/usr/bin/mongod",
     "mongo":"/usr/bin/mongo",
-    "ycsb":"/home/zsc/YCSB/bin/ycsb",
+    "ycsb":"/home/zsc/YCSB/bin/ycsb.sh",
     "cpus": "3"
 }
 }

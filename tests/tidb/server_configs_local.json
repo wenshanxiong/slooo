@@ -8,7 +8,7 @@
     "swapfile": "/data1/swapfile",
     "swapbs": 1024,
     "swapcount": 25165824,
-    "cpu": 1,
+    "cpu": 0,
     "process": "tikv-server",
     "deploy_dir": "/data1/tidb-deploy",
     "data_dir": "/data1/tidb-data",
@@ -23,7 +23,7 @@
     "swapfile": "/data2/swapfile",
     "swapbs": 1024,
     "swapcount": 25165824,
-    "cpu": 2,
+    "cpu": 1,
     "process": "tikv-server",
     "deploy_dir": "/data2/tidb-deploy",
     "data_dir": "/data2/tidb-data",
@@ -38,7 +38,7 @@
     "swapfile": "/data3/swapfile",
     "swapbs": 1024,
     "swapcount": 25165824,
-    "cpu": 3,
+    "cpu": 2,
     "process": "tikv-server",
     "deploy_dir": "/data3/tidb-deploy",
     "data_dir": "/data3/tidb-data",
@@ -63,6 +63,6 @@
       "name": "client",
       "ip": "localhost",
       "ycsb": "/home/tidb/go-ycsb/bin/go-ycsb",
-      "cpus": "4,5,6"
+      "cpus": "4"
   }
 }

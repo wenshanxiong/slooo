@@ -3,7 +3,7 @@ import argparse
 
 from tests.mongodb.test_main import *
 from tests.rethink.test_main import *
-# from tests.tidb.test_main import *
+from tests.tidb.test_main import *
 # from tests.copilot.test_main import *
 from utils.common_utils import config_parser
 
@@ -55,13 +55,15 @@ def main(opt):
                 # get fault level and pointbreak config
                 fault_cfg = config_parser(opt.fault_configs)
                 pb_cfg = fault_cfg["pointbreak"]
-                fault_level = fault_cfg["fault_level"][exp]
-                resource = list(fault_level.keys())[0]
-
-                # calculate the fault levels for testing. If point break is not activated, only the user defined level will be tested.
-                start, end, step = pb_cfg[resource]["start"], pb_cfg[resource]["end"], pb_cfg[resource]["step"]
+                if exp == 'noslow' or exp == 'kill':
+                    fault_level = None
+                else:
+                    fault_level = fault_cfg["fault_level"][exp]
+                    resource = list(fault_level.keys())[0]
 
                 if opt.point_break:
+                    # calculate the fault levels for testing. If point break is not activated, only the user defined level will be tested.
+                    start, end, step = pb_cfg[resource]["start"], pb_cfg[resource]["end"], pb_cfg[resource]["step"]
                     pb_checkpoints = [checkpoint for checkpoint in range(start, end, -step)]
                     for checkpoint in pb_checkpoints:
                         fault_level[resource] = checkpoint

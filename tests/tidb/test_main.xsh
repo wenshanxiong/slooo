@@ -17,15 +17,16 @@ class TiDB(Quorum):
         results_path = os.path.join(self.output_path, "tidb_{}_{}_{}_{}_results".format(self.exp_type,"swapon" if self.swap else "swapoff", self.ondisk, self.threads))
         mkdir -p @(results_path)
         self.results_txt = os.path.join(results_path,"{}_{}.txt".format(self.exp,self.trial))
-        self.setup_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "setup.yaml")
-        self.setup_updt_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "setup_updt.yaml")
-
+        self.setup_yaml = os.path.join(os.path.dirname(__file__), "setup.yaml")
+        self.setup_updt_yaml = os.path.join(os.path.dirname(__file__), "setup_updt.yaml")
+        print(self.setup_yaml, self.setup_updt_yaml)
 
     def config_yaml(self):
         data = None
         with open(self.setup_yaml, "r") as f:
             data = f.read()
         
+        # data = data.replace("tidb", "root")
         data = data.replace("<pd_host>", self.pd_configs["ip"])
         data = data.replace("<pd_deploy_dir>", self.pd_configs["deploy_dir"])
         data = data.replace("<pd_data_dir>", self.pd_configs["data_dir"])
@@ -40,9 +41,15 @@ class TiDB(Quorum):
         with open(self.setup_updt_yaml, "w") as f:
             f.write(data)
     
+    def server_setup(self):
+        super().server_setup()
+        for cfg in self.server_configs:
+            ssh -i ~/.ssh/id_rsa @(cfg["ip"]) @(f"sudo sh -c 'sudo mkdir -p {cfg['datadir']}; sudo chmod o+w {cfg['datadir']}'")
+
     def start_db(self):
-        scp self.setup_updt_yaml @(self.pd_configs["ip"]):~/
-        ssh -i ~/.ssh/id_rsa @(self.pd_configs["ip"]) @(f"{self.pd_configs['tiup']} cluster deploy mytidb v4.0.0 ~/setup_updt.yaml --user tidb -y")
+        super().start_db()
+        scp @(self.setup_updt_yaml) @(self.pd_configs["ip"]):~/
+        ssh -i ~/.ssh/id_rsa @(self.pd_configs["ip"]) @(f"{self.pd_configs['tiup']} cluster deploy mytidb v4.0.0 ./setup_updt.yaml --user tidb -y")
 
         for cfg in self.server_configs:
             run_tikv = os.path.join(cfg["deploy_dir"], "scripts/run_tikv.sh")
@@ -52,6 +59,7 @@ class TiDB(Quorum):
         sleep 30
 
     def db_init(self):
+        super().db_init()
         tiup ctl:v4.0.0 pd config set label-property reject-leader dc 1 -u @(f"http://{self.pd_configs['ip']}:2379")    # leader is restricted to s3
         sleep 10
 
@@ -60,6 +68,7 @@ class TiDB(Quorum):
         pids = pids.split()
         for pid in pids:
             ac = $(ssh -i ~/.ssh/id_rsa @(followerip) @(f"sh -c 'taskset -pc {pid}'"))
+            print(ac, self.server_configs[0])
             if self.server_configs[0]["cpu"] ==  int(ac.split(": ")[1]):
                 secondarypid = pid
 
@@ -71,11 +80,13 @@ class TiDB(Quorum):
 
     # benchmark_load is used to run the ycsb load and wait until it completes.
     def benchmark_load(self):
-        taskset -ac {self.client_configs['cpus']} @(self.client_configs["ycsb"]) load tikv -P @(self.workload) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads)
+        super().benchmark_load()
+        taskset -ac @(self.client_configs['cpus']) @(self.client_configs["ycsb"]) load tikv -P @(self.workload) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads)
 
     # ycsb run exectues the given workload and waits for it to complete
     def benchmark_run(self):
-        taskset -ac {self.client_configs['cpus']} @(self.client_configs["ycsb"]) run tikv -P @(self.workload) -p maxexecutiontime=@(self.runtime) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads) > @(self.results_txt)
+        super().benchmark_run()
+        taskset -ac @(self.client_configs['cpus']) @(self.client_configs["ycsb"]) run tikv -P @(self.workload) -p maxexecutiontime=@(self.runtime) -p tikv.pd=@(self.pd_configs["ip"]):2379 --threads=@(self.threads) > @(self.results_txt)
 
     
     def tidb_cleanup(self):
@@ -83,28 +94,5 @@ class TiDB(Quorum):
 
 
     def run(self):
-        start_servers(self.server_configs + [self.pd_configs])
         self.config_yaml()
-        
-        # self.tidb_data_cleanup()
-        self.server_cleanup()
-        
-        self.server_setup()
-        self.start_db()
-        self.db_init()   
-        
-        self.benchmark_load()
-
-        sleep 10
-
-        self.fault_process = Process(target=fault_inject, args=(self.exp, self.fault_server_config, self.fault_pids, self.fault_snooze, ))
-        self.fault_process.start()
-
-        self.benchmark_run()
-
-        self.fault_process.join()
-
-        self.tidb_cleanup()
-        self.server_cleanup()
-        
-        stop_servers(self.server_configs + [self.pd_configs])
+        super().run()

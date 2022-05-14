@@ -78,6 +78,7 @@ class RethinkDB(Quorum):
         name_PID_IP = {}
         for n in res:
             name_PID_IP[n['name']] = n['process']['pid'],n['network']['canonical_addresses'][0]['host']
+            self.server_pids.append(n['process']['pid'])
 
         leader_pid, leader_ip = name_PID_IP[leader]
         follower_pid, follower_ip = name_PID_IP[follower]

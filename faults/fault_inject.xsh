@@ -10,7 +10,8 @@ def cpu_slow(slow_server_config, slow_ip, slow_pids, fault_level):
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cpu.cfs_quota_us'".format(quota))
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cpu.cfs_period_us'".format(period))
     
-    for slow_pid in slow_pids.split():
+    if isinstance(slow_pids, str): slow_pids = slow_pids.split()
+    for slow_pid in slow_pids:
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/db/cgroup.procs'".format(slow_pid))
 
 def cpu_contention(slow_server_config, slow_ip, slow_pids):
@@ -22,7 +23,8 @@ def cpu_contention(slow_server_config, slow_ip, slow_pids):
     ssh -i ~/.ssh/id_rsa @(slow_ip) "sudo sh -c 'sudo echo 64 > /sys/fs/cgroup/cpu/cpulow/cpu.shares'"
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/cpuhigh/cgroup.procs'".format(deadlooppid))
 
-    for slow_pid in slow_pids.split():
+    if isinstance(slow_pids, str): slow_pids = slow_pids.split()
+    for slow_pid in slow_pids:
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/cpu/cpulow/cgroup.procs'".format(slow_pid))
 
 def disk_slow(slow_server_config, slow_ip, slow_pids):
@@ -31,7 +33,8 @@ def disk_slow(slow_server_config, slow_ip, slow_pids):
     lsblkcmd="8:32 524288"
     ssh -i ~/.ssh/id_rsa @(slow_ip) f"sudo sh -c 'sudo echo {lsblkcmd} > /sys/fs/cgroup/blkio/db/blkio.throttle.read_bps_device'"
     ssh -i ~/.ssh/id_rsa @(slow_ip) f"sudo sh -c 'sudo echo {lsblkcmd} > /sys/fs/cgroup/blkio/db/blkio.throttle.write_bps_device'"
-    for slow_pid in slow_pids.split():
+    if isinstance(slow_pids, str): slow_pids = slow_pids.split()
+    for slow_pid in slow_pids:
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/blkio/db/cgroup.procs'".format(slow_pid))
 
 def disk_contention(slow_server_config, slow_ip, slow_pids):
@@ -55,7 +58,8 @@ def memory_contention(slow_server_config, slow_ip, slow_pids, fault_level):
     # ssh -i ~/.ssh/id_rsa "$host_id"@"$slow_ip" "sudo sh -c 'sudo echo 1 > /sys/fs/cgroup/memory/db/memory.oom_control'"  # disable OOM killer
     ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/memory/db/memory.limit_in_bytes'".format(mem_quota))   # 5MB
     
-    for slow_pid in slow_pids.split():
+    if isinstance(slow_pids, str): slow_pids = slow_pids.split()
+    for slow_pid in slow_pids:
         ssh -i ~/.ssh/id_rsa @(slow_ip) @("sudo sh -c 'sudo echo {} > /sys/fs/cgroup/memory/db/cgroup.procs'".format(slow_pid))
 
 def kill_process(ip, pids):
